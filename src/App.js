@@ -91,7 +91,7 @@ const App = () => {
   useEffect(() => {
     fetchJokes();
   }, [fetchJokes]);
-  console.log(filters);
+  
   return (
     <Container>
       <Grid.Container justify="space-between" css={{ p: "10px" }}>
