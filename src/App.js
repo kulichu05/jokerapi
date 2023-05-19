@@ -34,13 +34,18 @@ const jokesFormatter = (joke) => {
 
 const App = () => {
   const [jokes, setJokes] = useState([]);
+  const [endOfList, setEndOfList] = useState(false);
+
   const [filters, setFilters] = useState({
-    page: 0,
+    page: 1,
     categorys: [],
   });
+  const handlePageChange = (newPage) => {
+    fetchJokes(newPage);
+  };
 
   const fetchJokes = useCallback(
-    async (pageNumber = 0) => {
+    async (pageNumber = 1) => {
       try {
         const response = await axios.get(
           api +
@@ -48,14 +53,19 @@ const App = () => {
           {
             params: {
               amount: 10,
+              idRange: `${(pageNumber - 1) * 10}-${pageNumber * 10}`,
               ...additionalParams(filters.type),
             },
           }
         );
         const newJokes = response.data.jokes.map(jokesFormatter);
+        setFilters((prev) => {
+          return { ...prev, page: pageNumber };
+        });
+        setEndOfList(false);
         setJokes(newJokes);
       } catch (error) {
-        console.error("Error fetching jokes:", error);
+        setEndOfList(true);
       }
     },
     [filters.categorys, filters.type]
@@ -84,12 +94,13 @@ const App = () => {
   console.log(filters);
   return (
     <Container>
-      <Grid.Container justify="space-between">
+      <Grid.Container justify="space-between" css={{ p: "10px" }}>
         <Grid>
-          <Button.Group vertical={window.innerWidth < 768}>
-            {categorys.map((cat) => {
+          <Button.Group css={{ m: 0 }} vertical={window.innerWidth < 768}>
+            {categorys.map((cat, index) => {
               return (
                 <Button
+                  key={index}
                   css={{
                     opacity:
                       filters.categorys.length &&
@@ -130,6 +141,7 @@ const App = () => {
             {jokeTypes.map((type, index) => {
               return (
                 <Button
+                  key={index}
                   css={{
                     opacity: filters.type === index ? 0.5 : 1,
                   }}
@@ -156,7 +168,9 @@ const App = () => {
             <Grid key={index} xs={9} sm={6} md={3}>
               <Card css={{ mw: "330px" }}>
                 <Card.Body css={{ width: "auto" }}>
-                  <Text css={{ width: "auto" }}>{joke}</Text>
+                  <Text css={{ width: "auto", wordWrap: "break-word" }}>
+                    {joke}
+                  </Text>
                 </Card.Body>
                 <Card.Divider />
                 <Card.Footer>
@@ -173,6 +187,27 @@ const App = () => {
               </Card>
             </Grid>
           ))}
+      </Grid.Container>
+      <Grid.Container justify="center" css={{ p: "10px" }}>
+        <Grid>
+          <Button.Group>
+            <Button
+              disabled={filters.page === 1}
+              onClick={() => handlePageChange(filters.page - 1)}
+            >
+              {"<"}
+            </Button>
+
+            <Button disabled>{filters.page}</Button>
+
+            <Button
+              disabled={endOfList}
+              onClick={() => handlePageChange(filters.page + 1)}
+            >
+              {">"}
+            </Button>
+          </Button.Group>
+        </Grid>
       </Grid.Container>
     </Container>
   );
